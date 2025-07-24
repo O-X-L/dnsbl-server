@@ -1,0 +1,17 @@
+---
+
+domains:
+  - response: 127.0.0.2
+    content:
+      - 'malicious.risk.oxl.app'
+
+ips:
+  - response: 127.0.0.2
+    content:
+      - '192.0.2.88'
+      - 'fe80::9fe:dc1c:42f0:6e60'
+
+nets:
+  - response: 127.0.0.2
+    content:
+      - '192.0.2.128/29'
