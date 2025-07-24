@@ -59,7 +59,11 @@ func main() {
 	}
 
 	configRaw := internal.DNSBLConfigFile{}
-	internal.LoadConfig(configFile, &configRaw)
+	err := internal.LoadConfig(configFile, &configRaw)
+	if err != nil {
+        fmt.Printf("ERROR: Failed to load config-file - %v\n", err)
+		os.Exit(1)
+	}
 	internal.FlattenConfig(&configRaw, &config.BL)
 
 	dns.HandleFunc(baseIP, config.LookupIP)
@@ -67,7 +71,7 @@ func main() {
 
 	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
 	log.Printf("DNS-BL server listening on %d\n > IP Lookup: %v\n > Domain Lookup: %v", port, baseIP, baseDomain)
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	defer server.Shutdown()
 	if err != nil {
 		log.Fatalf("Failed to start server: %s\n ", err.Error())
