@@ -28,17 +28,33 @@ Users can query the DNS-BL as configured in your config-file through:
 * `d.<DOMAIN>` => for Domain-Lookups
 
 ```bash
-dnsbl-server -domain test.at -config ./config.yml -port 10000
+rath@gate:~ dnsbl-server -help
+> Usage of dnsbl-server:
+>   -config string
+>         Path to the config file (in YAML format) (required)
+>   -domain string
+>         Domain to serve for (required)
+>   -log-json
+>         Log in JSON-format (defaut false)
+>   -no-log
+>         Disable request logging (defaut false)
+>   -no-log-time
+>         Disable log timestamp (defaut false)
+>   -port int
+>         Port to listen on (default 5353)
+
+rath@gate:~ dnsbl-server -domain test.at -config ./config.yml -port 10000
+
 2025/07/24 21:46:12 DNS-BL server listening on 10000
  > IP Lookup: ip.test.at.
  > Domain Lookup: d.test.at.
-# <time> [<client-IP>] => <IP/DOMAIN>: <request> <= response-code
+# <time> [<client-IP>] => <IP/DOMAIN>: <request> <= <status> <response>
 #   200 = found, 400 = bad request, 404 = not found
-2025/07/24 21:46:16 [127.0.0.1] => IP: 192.0.2.88 <= 200
-2025/07/24 21:46:18 [127.0.0.1] => IP: 192.0.2.130 <= 200
+2025/07/24 21:46:16 [127.0.0.1] => IP: 192.0.2.88 <= 200 127.0.0.2
+2025/07/24 21:46:18 [127.0.0.1] => IP: 192.0.2.130 <= 200 127.0.0.2
 2025/07/24 21:46:23 [127.0.0.1] => IP: 1.1.1.1 <= 404
-2025/07/24 21:46:53 [127.0.0.1] => IP: fe80::9fe:dc1c:42f0:6e60 <= 200
-2025/07/24 21:48:08 [127.0.0.1] => Domain: malicious.risk.oxl.app <= 200
+2025/07/24 21:46:53 [127.0.0.1] => IP: fe80::9fe:dc1c:42f0:6e60 <= 200 127.0.0.2
+2025/07/24 21:48:08 [127.0.0.1] => Domain: malicious.risk.oxl.app <= 200 127.0.0.2
 2025/07/24 21:47:42 [127.0.0.1] => Domain: good.oxl.app <= 404
 
 # examples of bad requests

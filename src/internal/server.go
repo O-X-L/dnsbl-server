@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"log"
 	"net/netip"
 	"regexp"
 	"slices"
@@ -14,22 +13,6 @@ import (
 const RES_RATE = "127.255.255.255"
 const BAD_REQ = "-"
 const REGEX_DOMAIN = "^[a-z0-9\\-\\.]{1,253}\\.[a-z0-9\\-]{2,63}(\\.?)$"
-
-func logRequest(q string, res string, cli string, c *DNSBLRunningConfig, t int) {
-	if !c.Log {
-		return
-	}
-	ts := "IP"
-	if t == LOOKUP_DOMAIN {
-		ts = "Domain"
-	}
-	l := fmt.Sprintf("[%s] => %s: %s <= %s", cli, ts, q, res)
-	if c.LogTime {
-		log.Println(l)
-	} else {
-		fmt.Println(l)
-	}
-}
 
 func checkIP(q dns.Question, c *DNSBLRunningConfig) (string, string) {
 	req := strings.Replace(q.Name, c.BaseIP, "", 1)
@@ -105,17 +88,17 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 			}
 
 			if res == BAD_REQ {
-				logRequest(query, "400", cli, c, t)
+				logRequest(query, 400, cli, c, t, "")
 
 			} else if res != "" {
-				logRequest(query, "200", cli, c, t)
+				logRequest(query, 200, cli, c, t, res)
 				rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, res))
 				if err == nil {
 					m.Answer = append(m.Answer, rr)
 				}
 
 			} else {
-				logRequest(query, "404", cli, c, t)
+				logRequest(query, 404, cli, c, t, "")
 			}
 		}
 	}

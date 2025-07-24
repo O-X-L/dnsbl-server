@@ -35,6 +35,7 @@ type DNSBLRunningConfig struct {
 	BaseDomain string
 	Log        bool
 	LogTime    bool
+	LogJSON    bool
 }
 
 func (config *DNSBLRunningConfig) LookupIP(w dns.ResponseWriter, r *dns.Msg) {
