@@ -1,5 +1,15 @@
 # DNS-BL Microservice
 
+A very simple and lightweight DNS-BL service.
+
+It builds on the [miekg/dns library](https://github.com/miekg/dns).
+
+Tip: To query multiple DNS-BL providers concurrently - check out our [dnsbl-check client](https://github.com/O-X-L/dnsbl-checker).
+
+If you are interested in [report-based reputation-systems => check out our Risk-DB project](https://github.com/O-X-L/risk-db).
+
+---
+
 ## Config
 
 ```yaml
