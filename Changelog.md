@@ -6,6 +6,10 @@
 
 * Disable IP- or Domain-Listeners if no config for them was provided
 
+## Fixes
+
+* Added missing SOA & NS responses
+
 ## Chore
 
 * Go Version 1.23 => 1.24

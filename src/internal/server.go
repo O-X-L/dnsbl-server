@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/miekg/dns"
 )
@@ -13,6 +14,8 @@ import (
 const RES_RATE = "127.255.255.255"
 const BAD_REQ = "-"
 const REGEX_DOMAIN = "^[a-z0-9\\-\\.]{1,253}\\.[a-z0-9\\-]{2,63}(\\.?)$"
+
+var STARTUP_TIME = time.Now().Format("2006010215")
 
 func checkIP(q dns.Question, c *DNSBLRunningConfig) (string, string) {
 	req := strings.Replace(q.Name, c.BaseIP, "", 1)
@@ -70,6 +73,10 @@ func checkDomain(q dns.Question, c *DNSBLRunningConfig) (string, string) {
 	return res, domain
 }
 
+func soaResponse(d string, c *DNSBLRunningConfig) string {
+	return fmt.Sprintf("%s 3600 IN SOA %s %s %s 10800 3600 604800 3600", d, c.NS[0], c.AdminMail, STARTUP_TIME)
+}
+
 func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) {
 	for _, q := range m.Question {
 		switch q.Qtype {
@@ -99,6 +106,47 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 
 			} else {
 				logRequest(query, 404, cli, c, t, "")
+			}
+
+		case dns.TypeSOA:
+			var baseDomain string
+			if t == LOOKUP_IP {
+				baseDomain = c.BaseIP[1:]
+			} else {
+				baseDomain = c.BaseDomain[1:]
+			}
+
+			rr, err := dns.NewRR(soaResponse(baseDomain, c))
+
+			if err == nil {
+				if q.Name == baseDomain {
+					m.Answer = append(m.Answer, rr)
+				} else {
+					m.Ns = append(m.Ns, rr)
+				}
+			} else {
+				fmt.Println("SOA ERROR:", q.Name, baseDomain, err)
+			}
+
+		case dns.TypeNS:
+			var baseDomain string
+			if t == LOOKUP_IP {
+				baseDomain = c.BaseIP[1:]
+			} else {
+				baseDomain = c.BaseDomain[1:]
+			}
+
+			for _, host := range c.NS {
+				rr, err := dns.NewRR(fmt.Sprintf("%s 3600 IN NS %s", baseDomain, host))
+				if err == nil {
+					if q.Name == baseDomain {
+						m.Answer = append(m.Answer, rr)
+					} else {
+						m.Ns = append(m.Ns, rr)
+					}
+				} else {
+					fmt.Println("NS ERROR:", q.Name, baseDomain, err)
+				}
 			}
 		}
 	}

@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"strconv"
-	"strings"
 
 	"git.oxl.at/dnsbl-server/src/internal"
 	"github.com/miekg/dns"
@@ -16,14 +14,12 @@ import (
 const VERSION = "1.0.0"
 
 func main() {
-	var domain string
 	var configFile string
 	var port int
 	var noLog bool
 	var noLogTime bool
 	var logJSON bool
 
-	flag.StringVar(&domain, "domain", "", "Domain to serve for")
 	flag.StringVar(&configFile, "config", "", "Path to the config file (in YAML format)")
 	flag.IntVar(&port, "port", 5353, "Port to listen on")
 	flag.BoolVar(&noLog, "no-log", false, "Disable request logging")
@@ -33,29 +29,16 @@ func main() {
 
 	fmt.Printf("DNS-BL Server v%v\n  © OXL IT Service\n  License: GPLv3\n\n", VERSION)
 
-	if domain == "" || configFile == "" {
-		fmt.Println("ERROR: Domain and config-file need to be provided!")
+	if configFile == "" {
+		fmt.Println("ERROR: Config-file is required!")
 		os.Exit(1)
 	}
 
-	validDomain, _ := regexp.MatchString(internal.REGEX_DOMAIN, domain)
-	if !validDomain {
-		fmt.Println("ERROR: Invalid domain provided! Example: 'dnsbl.risk.oxl.app'")
-		os.Exit(1)
-	}
-	if !strings.HasSuffix(domain, ".") {
-		domain += "."
-	}
-
-	baseIP := fmt.Sprintf("ip.%v", domain)
-	baseDomain := fmt.Sprintf("d.%v", domain)
 	config := internal.DNSBLRunningConfig{
-		BL:         internal.DNSBLConfigFlat{},
-		Log:        !noLog,
-		LogTime:    !noLogTime,
-		LogJSON:    logJSON,
-		BaseIP:     fmt.Sprintf(".%v", baseIP),
-		BaseDomain: fmt.Sprintf(".%v", baseDomain),
+		BL:      internal.DNSBLConfigFlat{},
+		Log:     !noLog,
+		LogTime: !noLogTime,
+		LogJSON: logJSON,
 	}
 
 	configRaw := internal.DNSBLConfigFile{}
@@ -64,7 +47,7 @@ func main() {
 		fmt.Printf("ERROR: Failed to load config-file - %v\n", err)
 		os.Exit(1)
 	}
-	internal.FlattenConfig(&configRaw, &config.BL)
+	internal.ValidateFlattenConfig(&configRaw, &config)
 
 	if len(config.BL.Domains) == 0 && len(config.BL.IPs) == 0 && len(config.BL.Nets) == 0 {
 		fmt.Printf("ERROR: Empty config-file - %v\n", err)
@@ -73,12 +56,12 @@ func main() {
 
 	log.Printf("DNS-BL server listening on %d\n", port)
 	if len(config.BL.IPs) > 0 || len(config.BL.Nets) > 0 {
-		dns.HandleFunc(baseIP, config.LookupIP)
-		fmt.Printf(" > IP Lookup: %v\n", baseIP)
+		dns.HandleFunc(config.BaseIP[1:], config.LookupIP)
+		fmt.Printf(" > IP Lookup: %v\n", config.BaseIP[1:])
 	}
 	if len(config.BL.Domains) > 0 {
-		dns.HandleFunc(baseDomain, config.LookupDomain)
-		fmt.Printf(" > Domain Lookup: %v\n", baseDomain)
+		dns.HandleFunc(config.BaseDomain[1:], config.LookupDomain)
+		fmt.Printf(" > Domain Lookup: %v\n", config.BaseDomain[1:])
 	}
 
 	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}

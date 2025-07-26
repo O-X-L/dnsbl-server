@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/miekg/dns"
 	"gopkg.in/yaml.v3"
@@ -18,9 +20,12 @@ type DNSBLEntries struct {
 }
 
 type DNSBLConfigFile struct {
-	Domains []DNSBLEntries `yaml:"domains"`
-	IPs     []DNSBLEntries `yaml:"ips"`
-	Nets    []DNSBLEntries `yaml:"nets"`
+	Domain    string         `yaml:"domain"`
+	AdminMail string         `yaml:"admin_mail"`
+	NS        []string       `yaml:"nameservers"`
+	Domains   []DNSBLEntries `yaml:"domains"`
+	IPs       []DNSBLEntries `yaml:"ips"`
+	Nets      []DNSBLEntries `yaml:"nets"`
 }
 
 type DNSBLConfigFlat struct {
@@ -33,6 +38,8 @@ type DNSBLRunningConfig struct {
 	BL         DNSBLConfigFlat
 	BaseIP     string
 	BaseDomain string
+	NS         []string
+	AdminMail  string
 	Log        bool
 	LogTime    bool
 	LogJSON    bool
@@ -58,14 +65,51 @@ func LoadConfig(config_file string, d *DNSBLConfigFile) error {
 	return nil
 }
 
-func FlattenConfig(c *DNSBLConfigFile, f *DNSBLConfigFlat) {
-	f.Domains = map[string]string{}
-	f.IPs = map[netip.Addr]string{}
-	f.Nets = map[netip.Prefix]string{}
+func ValidateFlattenConfig(c *DNSBLConfigFile, r *DNSBLRunningConfig) {
+	if c.Domain == "" || c.AdminMail == "" || len(c.NS) == 0 {
+		fmt.Println("ERROR: Domain, Admin-Email-Address and Nameserver(s) are required!")
+		os.Exit(1)
+	}
+
+	validDomain, _ := regexp.MatchString(REGEX_DOMAIN, c.Domain)
+	if !validDomain {
+		fmt.Println("ERROR: Invalid domain provided! Example: 'dnsbl.risk.oxl.app'")
+		os.Exit(1)
+	}
+	if !strings.HasSuffix(c.Domain, ".") {
+		c.Domain += "."
+	}
+
+	r.BaseIP = fmt.Sprintf(".ip.%v", c.Domain)
+	r.BaseDomain = fmt.Sprintf(".d.%v", c.Domain)
+
+	for _, hostname := range c.NS {
+		if strings.HasSuffix(hostname, ".") {
+			hostname = strings.TrimSuffix(hostname, ".")
+		}
+		validDomain, _ := regexp.MatchString(REGEX_DOMAIN, hostname)
+		if !validDomain {
+			fmt.Printf("ERROR: Invalid nameserver hostname provided: %s\n", hostname)
+			os.Exit(1)
+		}
+	}
+	r.NS = c.NS
+	r.AdminMail = strings.ReplaceAll(c.AdminMail, "@", ".")
+	if strings.HasSuffix(r.AdminMail, ".") {
+		r.AdminMail = strings.TrimSuffix(r.AdminMail, ".")
+	}
+	if !validDomain || !strings.Contains(c.AdminMail, "@") {
+		fmt.Printf("ERROR: Invalid Admin-Email-Address provided: %s\n", c.AdminMail)
+		os.Exit(1)
+	}
+
+	r.BL.Domains = map[string]string{}
+	r.BL.IPs = map[netip.Addr]string{}
+	r.BL.Nets = map[netip.Prefix]string{}
 
 	for _, l := range c.Domains {
 		for _, e := range l.Content {
-			f.Domains[e] = l.Response
+			r.BL.Domains[e] = l.Response
 		}
 	}
 
@@ -76,7 +120,7 @@ func FlattenConfig(c *DNSBLConfigFile, f *DNSBLConfigFlat) {
 				fmt.Printf("Ignoring IP in invalid format: %v (%v)\n", e, ip)
 				continue
 			}
-			f.IPs[ip] = l.Response
+			r.BL.IPs[ip] = l.Response
 		}
 	}
 
@@ -87,8 +131,7 @@ func FlattenConfig(c *DNSBLConfigFile, f *DNSBLConfigFlat) {
 				fmt.Printf("Ignoring network in invalid format: %v (%v)\n", e, n)
 				continue
 			}
-			f.Nets[n] = l.Response
+			r.BL.Nets[n] = l.Response
 		}
 	}
-
 }

@@ -1,5 +1,14 @@
 ---
 
+# Domain to serve for
+domain: 'dnsbl.example.org'
+# Admin E-Mail Address (for response of SOA-type query)
+admin_mail: 'admin@example.org'
+# List of nameserver hosts (response of SOA- & NS-type queries)
+nameservers:
+  - 'ns1.example.org'
+  - 'ns2.example.org'
+
 domains:
   - response: 127.0.0.2
     content:

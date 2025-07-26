@@ -13,6 +13,15 @@ If you are interested in [report-based reputation-systems => check out our Risk-
 ## Config
 
 ```yaml
+# Domain to serve for
+domain: 'dnsbl.example.org'
+# Admin E-Mail Address (for response of SOA-type query)
+admin_mail: 'admin@example.org'
+# List of nameserver hosts (response of SOA- & NS-type queries) [these are the A/AAAA records that point to the hosts that run the DNS-BL service]
+nameservers:
+  - 'ns1.example.org'
+  - 'ns2.example.org'
+
 domains:
   - response: 127.0.0.2
     content:
@@ -41,7 +50,7 @@ You have some options:
 * Build the docker-image yourself: [Dockerfile](https://github.com/O-X-L/dnsbl-server/blob/latest/docker/Dockerfile)
 * Use the published docker-image: `oxlorg/dnsbl-server` ([hub.docker.com](https://hub.docker.com/r/oxlorg/dnsbl-server))
 
-  Run example: `docker run -d --name dnsbl-server --restart always -p 53:5353/udp -v $(pwd):/app/ oxlorg/dnsbl-server:latest /usr/local/bin/dnsbl-server -config /app/config.yml -domain test.at`
+  Run example: `docker run -d --name dnsbl-server --restart always -p 53:5353/udp -v $(pwd):/app/ oxlorg/dnsbl-server:latest /usr/local/bin/dnsbl-server -config /app/config.yml`
 
 ----
 
@@ -67,11 +76,11 @@ rath@gate:~ dnsbl-server -help
 >   -port int
 >         Port to listen on (default 5353)
 
-rath@gate:~ dnsbl-server -domain test.at -config ./config.yml -port 10000
+rath@gate:~ dnsbl-server -config ./config.yml -port 10000
 
 2025/07/24 21:46:12 DNS-BL server listening on 10000
- > IP Lookup: ip.test.at.
- > Domain Lookup: d.test.at.
+ > IP Lookup: ip.dnsbl.example.org.
+ > Domain Lookup: d.dnsbl.example.org.
 # <time> [<client-IP>] => <IP/DOMAIN>: <request> <= <status> <response>
 #   200 = found, 400 = bad request, 404 = not found
 2025/07/24 21:46:16 [127.0.0.1] => IP: 192.0.2.88 <= 200 127.0.0.2
@@ -101,60 +110,60 @@ Default server: 127.0.0.1
 Address: 127.0.0.1#10000
 
 # IPv4 MATCH:
-> 88.2.0.192.ip.test.at
+> 88.2.0.192.ip.dnsbl.example.org
 Server:         127.0.0.1
 Address:        127.0.0.1#10000
 
 Non-authoritative answer:
-Name:   88.2.0.192.ip.test.at
+Name:   88.2.0.192.ip.dnsbl.example.org
 Address: 127.0.0.2
 
 
 # IPv4 NETWORK MATCH:
-> 130.2.0.192.ip.test.at
+> 130.2.0.192.ip.dnsbl.example.org
 Server:         127.0.0.1
 Address:        127.0.0.1#10000
 
 Non-authoritative answer:
-Name:   130.2.0.192.ip.test.at
+Name:   130.2.0.192.ip.dnsbl.example.org
 Address: 127.0.0.2
 
 
 # IPv6 MATCH:
-> 0.6.e.6.0.f.2.4.c.1.c.d.e.f.9.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.e.f.ip.test.at
+> 0.6.e.6.0.f.2.4.c.1.c.d.e.f.9.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.e.f.ip.dnsbl.example.org
 Server:         127.0.0.1
 Address:        127.0.0.1#10000
 
 Non-authoritative answer:
-Name:   0.6.e.6.0.f.2.4.c.1.c.d.e.f.9.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.e.f.ip.test.at
+Name:   0.6.e.6.0.f.2.4.c.1.c.d.e.f.9.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.e.f.ip.dnsbl.example.org
 Address: 127.0.0.2
 
 
 # DOMAIN MATCH
-> malicious.risk.oxl.app.d.test.at
+> malicious.risk.oxl.app.d.dnsbl.example.org
 Server:         127.0.0.1
 Address:        127.0.0.1#10000
 
 Non-authoritative answer:
-Name:   malicious.risk.oxl.app.d.test.at
+Name:   malicious.risk.oxl.app.d.dnsbl.example.org
 Address: 127.0.0.2
 
 
 # IP NOT LISTED:
-> 1.1.1.1.ip.test.at
+> 1.1.1.1.ip.dnsbl.example.org
 Server:         127.0.0.1
 Address:        127.0.0.1#10000
 
 Non-authoritative answer:
-*** Can't find 1.1.1.1.ip.test.at: No answer
+*** Can't find 1.1.1.1.ip.dnsbl.example.org: No answer
 
 
 # DOMAIN NOT LISTED
-> good.oxl.app.d.test.at
+> good.oxl.app.d.dnsbl.example.org
 Server:         127.0.0.1
 Address:        127.0.0.1#10000
 
 Non-authoritative answer:
-*** Can't find good.oxl.app.d.test.at: No answer
+*** Can't find good.oxl.app.d.dnsbl.example.org: No answer
 ```
 </details>
