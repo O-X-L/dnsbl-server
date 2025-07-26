@@ -61,16 +61,27 @@ func main() {
 	configRaw := internal.DNSBLConfigFile{}
 	err := internal.LoadConfig(configFile, &configRaw)
 	if err != nil {
-        fmt.Printf("ERROR: Failed to load config-file - %v\n", err)
+		fmt.Printf("ERROR: Failed to load config-file - %v\n", err)
 		os.Exit(1)
 	}
 	internal.FlattenConfig(&configRaw, &config.BL)
 
-	dns.HandleFunc(baseIP, config.LookupIP)
-	dns.HandleFunc(baseDomain, config.LookupDomain)
+	if len(config.BL.Domains) == 0 && len(config.BL.IPs) == 0 && len(config.BL.Nets) == 0 {
+		fmt.Printf("ERROR: Empty config-file - %v\n", err)
+		os.Exit(1)
+	}
+
+	log.Printf("DNS-BL server listening on %d\n", port)
+	if len(config.BL.IPs) > 0 || len(config.BL.Nets) > 0 {
+		dns.HandleFunc(baseIP, config.LookupIP)
+		fmt.Printf(" > IP Lookup: %v\n", baseIP)
+	}
+	if len(config.BL.Domains) > 0 {
+		dns.HandleFunc(baseDomain, config.LookupDomain)
+		fmt.Printf(" > Domain Lookup: %v\n", baseDomain)
+	}
 
 	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
-	log.Printf("DNS-BL server listening on %d\n > IP Lookup: %v\n > Domain Lookup: %v", port, baseIP, baseDomain)
 	err = server.ListenAndServe()
 	defer server.Shutdown()
 	if err != nil {
