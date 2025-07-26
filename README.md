@@ -52,6 +52,12 @@ You have some options:
 
   Run example: `docker run -d --name dnsbl-server --restart always -p 53:5353/udp -v $(pwd):/app/ oxlorg/dnsbl-server:latest /usr/local/bin/dnsbl-server -config /app/config.yml`
 
+### DNS Setup
+
+You have to set the `NS` of your subdomain (P.e. `ip.dnsbl.example.org`) to the hostname(s) of your DNS-Servers that will handle the DNS-BL queries.
+
+These hostnames need to match the `nameservers` inside the `config.yml`!
+
 ----
 
 ## Usage

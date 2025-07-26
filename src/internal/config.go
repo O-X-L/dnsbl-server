@@ -109,7 +109,7 @@ func ValidateFlattenConfig(c *DNSBLConfigFile, r *DNSBLRunningConfig) {
 
 	for _, l := range c.Domains {
 		for _, e := range l.Content {
-			r.BL.Domains[e] = l.Response
+			r.BL.Domains[strings.ToLower(e)] = l.Response
 		}
 	}
 

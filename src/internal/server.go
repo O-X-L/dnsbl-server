@@ -87,6 +87,8 @@ func getBaseDomain(t int, c *DNSBLRunningConfig) string {
 
 func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) {
 	for _, q := range m.Question {
+		q.Name = strings.ToLower(q.Name)
+
 		switch q.Qtype {
 		case dns.TypeA:
 			var res string
