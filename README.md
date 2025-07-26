@@ -30,6 +30,17 @@ nets:
       - '192.0.2.128/29'
 ```
 
+----
+
+## Install
+
+You have some options:
+
+* Compile it yourself: `bash scripts/build.sh`
+* Use the pre-compiled binaries from [the releases](https://github.com/O-X-L/dnsbl-server/releases)
+* Use the docker-image: `oxlorg/dnsbl-server` ([hub.docker.com](https://hub.docker.com/r/oxlorg/dnsbl-server))
+
+----
 
 ## Usage
 

@@ -4,7 +4,7 @@ FROM golang:1.24.5-alpine AS builder
 # TEST: docker run -it --rm --name dnsbl-server -p 5353:5353 dnsbl-server:latest /usr/local/bin/dnsbl-server -help
 # RUN: docker run -d --name dnsbl-server --restart always -p 53:5353/udp -v $(pwd)/config.yml:/app/config.yml dnsbl-server:latest /usr/local/bin/dnsbl-server -config /app/config.yml -domain test.at
 
-ENV REPO_URL https://github.com/O-X-L/dnsbl-server/archive/refs/heads/latest.tar.gz
+ENV REPO_URL=https://github.com/O-X-L/dnsbl-server/archive/refs/heads/latest.tar.gz
 
 RUN set -eux; \
         wget -O /tmp/dnsbl-server.tar.gz "$REPO_URL"; \
