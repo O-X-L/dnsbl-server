@@ -77,6 +77,14 @@ func soaResponse(d string, c *DNSBLRunningConfig) string {
 	return fmt.Sprintf("%s 3600 IN SOA %s %s %s 10800 3600 604800 3600", d, c.NS[0], c.AdminMail, STARTUP_TIME)
 }
 
+func getBaseDomain(t int, c *DNSBLRunningConfig) string {
+	if t == LOOKUP_IP {
+		return c.BaseIP[1:]
+	} else {
+		return c.BaseDomain[1:]
+	}
+}
+
 func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) {
 	for _, q := range m.Question {
 		switch q.Qtype {
@@ -111,14 +119,15 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 				m.Rcode = dns.RcodeNameError
 			}
 
-		case dns.TypeSOA:
-			var baseDomain string
-			if t == LOOKUP_IP {
-				baseDomain = c.BaseIP[1:]
-			} else {
-				baseDomain = c.BaseDomain[1:]
+			baseDomain := getBaseDomain(t, c)
+			rr, err := dns.NewRR(soaResponse(baseDomain, c))
+
+			if err == nil {
+				m.Ns = append(m.Ns, rr)
 			}
 
+		case dns.TypeSOA:
+			baseDomain := getBaseDomain(t, c)
 			rr, err := dns.NewRR(soaResponse(baseDomain, c))
 
 			if err == nil {
@@ -135,12 +144,7 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 			}
 
 		case dns.TypeNS:
-			var baseDomain string
-			if t == LOOKUP_IP {
-				baseDomain = c.BaseIP[1:]
-			} else {
-				baseDomain = c.BaseDomain[1:]
-			}
+			baseDomain := getBaseDomain(t, c)
 
 			for _, host := range c.NS {
 				rr, err := dns.NewRR(fmt.Sprintf("%s 3600 IN NS %s", baseDomain, host))
