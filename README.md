@@ -40,6 +40,8 @@ You have some options:
 * Use the pre-compiled binaries from [the releases](https://github.com/O-X-L/dnsbl-server/releases)
 * Use the docker-image: `oxlorg/dnsbl-server` ([hub.docker.com](https://hub.docker.com/r/oxlorg/dnsbl-server))
 
+  Run example: `docker run -d --name dnsbl-server --restart always -p 53:5353/udp -v $(pwd)/config.yml:/app/config.yml dnsbl-server:latest /usr/local/bin/dnsbl-server -config /app/config.yml -domain test.at`
+
 ----
 
 ## Usage
