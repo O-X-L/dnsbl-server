@@ -119,13 +119,6 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 				m.Rcode = dns.RcodeNameError
 			}
 
-			baseDomain := getBaseDomain(t, c)
-			rr, err := dns.NewRR(soaResponse(baseDomain, c))
-
-			if err == nil {
-				m.Ns = append(m.Ns, rr)
-			}
-
 		case dns.TypeSOA:
 			baseDomain := getBaseDomain(t, c)
 			rr, err := dns.NewRR(soaResponse(baseDomain, c))
