@@ -2,7 +2,7 @@ FROM golang:1.24.5-alpine AS builder
 
 # BUILD: docker build --no-cache -t dnsbl-server -f Dockerfile .
 # TEST: docker run -it --rm --name dnsbl-server -p 5353:5353 dnsbl-server:latest /usr/local/bin/dnsbl-server -help
-# RUN: docker run -d --name dnsbl-server --restart always -p 53:5353/udp -v $(pwd)/config.yml:/app/config.yml dnsbl-server:latest /usr/local/bin/dnsbl-server -config /app/config.yml -domain test.at
+# RUN: docker run -d --name dnsbl-server --restart always -p 53:5353/udp -v $(pwd)/config.yml:/app/config.yml dnsbl-server:latest /usr/local/bin/dnsbl-server -config /app/config.yml
 
 ENV REPO_URL=https://github.com/O-X-L/dnsbl-server/archive/refs/heads/latest.tar.gz
 
