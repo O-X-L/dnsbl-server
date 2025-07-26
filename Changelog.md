@@ -9,6 +9,7 @@
 ## Fixes
 
 * Added missing SOA & NS responses
+* Use correct response codes
 
 ## Chore
 

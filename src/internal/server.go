@@ -96,6 +96,7 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 
 			if res == BAD_REQ {
 				logRequest(query, 400, cli, c, t, "")
+				m.Rcode = dns.RcodeRefused
 
 			} else if res != "" {
 				logRequest(query, 200, cli, c, t, res)
@@ -103,9 +104,11 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 				if err == nil {
 					m.Answer = append(m.Answer, rr)
 				}
+				m.Rcode = dns.RcodeSuccess
 
 			} else {
 				logRequest(query, 404, cli, c, t, "")
+				m.Rcode = dns.RcodeNameError
 			}
 
 		case dns.TypeSOA:
@@ -124,8 +127,11 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 				} else {
 					m.Ns = append(m.Ns, rr)
 				}
+				m.Rcode = dns.RcodeSuccess
+
 			} else {
 				fmt.Println("SOA ERROR:", q.Name, baseDomain, err)
+				m.Rcode = dns.RcodeServerFailure
 			}
 
 		case dns.TypeNS:
@@ -144,8 +150,11 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 					} else {
 						m.Ns = append(m.Ns, rr)
 					}
+					m.Rcode = dns.RcodeSuccess
+
 				} else {
 					fmt.Println("NS ERROR:", q.Name, baseDomain, err)
+					m.Rcode = dns.RcodeServerFailure
 				}
 			}
 		}
