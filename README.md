@@ -68,17 +68,15 @@ Users can query the DNS-BL as configured in your config-file through:
 
 ```bash
 rath@gate:~ dnsbl-server -help
-> Usage of dnsbl-server:
->   -config string
->         Path to the config file (in YAML format) (required)
->   -domain string
->         Domain to serve for (required)
+> Usage of build/dnsbl-server-linux-amd64:
+>   -config string (required)
+>         Path to the config file (in YAML format)
 >   -log-json
->         Log in JSON-format (defaut false)
+>         Log in JSON-format
 >   -no-log
->         Disable request logging (defaut false)
+>         Disable request logging
 >   -no-log-time
->         Disable log timestamp (defaut false)
+>         Disable log timestamp
 >   -port int
 >         Port to listen on (default 5353)
 
@@ -108,7 +106,7 @@ rath@gate:~ dnsbl-server -config ./config.yml -port 10000
 
 <details>
 
-```
+```bash
 nslookup 
 > set port=10000
 > server 127.0.0.1
@@ -161,7 +159,7 @@ Server:         127.0.0.1
 Address:        127.0.0.1#10000
 
 Non-authoritative answer:
-*** Can't find 1.1.1.1.ip.dnsbl.example.org: No answer
+** server can\'t find 1.1.1.1.ip.dnsbl.example.org: NXDOMAIN
 
 
 # DOMAIN NOT LISTED
@@ -170,6 +168,6 @@ Server:         127.0.0.1
 Address:        127.0.0.1#10000
 
 Non-authoritative answer:
-*** Can't find good.oxl.app.d.dnsbl.example.org: No answer
+** server can\'t find good.oxl.app.d.dnsbl.example.org: NXDOMAIN
 ```
 </details>
