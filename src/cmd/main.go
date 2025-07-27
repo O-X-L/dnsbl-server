@@ -64,6 +64,8 @@ func main() {
 		fmt.Printf(" > Domain Lookup: %v\n", config.BaseDomain[1:])
 	}
 
+	dns.HandleFunc(config.Root, config.LookupRoot)
+
 	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
 	err = server.ListenAndServe()
 	defer server.Shutdown()

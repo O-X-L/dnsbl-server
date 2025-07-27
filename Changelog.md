@@ -5,6 +5,7 @@
 ## Features
 
 * Disable IP- or Domain-Listeners if no config for them was provided
+* Respond to queries on base-domains with CNAME to NS1
 
 ## Fixes
 

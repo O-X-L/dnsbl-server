@@ -36,6 +36,7 @@ type DNSBLConfigFlat struct {
 
 type DNSBLRunningConfig struct {
 	BL         DNSBLConfigFlat
+	Root       string
 	BaseIP     string
 	BaseDomain string
 	NS         []string
@@ -46,11 +47,15 @@ type DNSBLRunningConfig struct {
 }
 
 func (config *DNSBLRunningConfig) LookupIP(w dns.ResponseWriter, r *dns.Msg) {
-	HandleDnsRequest(w, r, config, LOOKUP_IP)
+	HandleDnsBLRequest(w, r, config, LOOKUP_IP)
 }
 
 func (config *DNSBLRunningConfig) LookupDomain(w dns.ResponseWriter, r *dns.Msg) {
-	HandleDnsRequest(w, r, config, LOOKUP_DOMAIN)
+	HandleDnsBLRequest(w, r, config, LOOKUP_DOMAIN)
+}
+
+func (config *DNSBLRunningConfig) LookupRoot(w dns.ResponseWriter, r *dns.Msg) {
+	HandleDNSRootDomain(w, r, config)
 }
 
 func LoadConfig(config_file string, d *DNSBLConfigFile) error {
@@ -80,6 +85,7 @@ func ValidateFlattenConfig(c *DNSBLConfigFile, r *DNSBLRunningConfig) {
 		c.Domain += "."
 	}
 
+	r.Root = c.Domain
 	r.BaseIP = fmt.Sprintf(".ip.%v", c.Domain)
 	r.BaseDomain = fmt.Sprintf(".d.%v", c.Domain)
 

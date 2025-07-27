@@ -85,6 +85,49 @@ func getBaseDomain(t int, c *DNSBLRunningConfig) string {
 	}
 }
 
+func sendCNAMEofNS1(m *dns.Msg, d string, c *DNSBLRunningConfig) {
+	rr, err := dns.NewRR(fmt.Sprintf("%s CNAME %s", d, c.NS[0]))
+	if err == nil {
+		m.Answer = append(m.Answer, rr)
+	}
+	m.Rcode = dns.RcodeSuccess
+}
+
+func sendNS(m *dns.Msg, q dns.Question, d string, c *DNSBLRunningConfig) {
+	for _, host := range c.NS {
+		rr, err := dns.NewRR(fmt.Sprintf("%s 3600 IN NS %s", d, host))
+		if err == nil {
+			if q.Name == d {
+				m.Answer = append(m.Answer, rr)
+			} else {
+				m.Ns = append(m.Ns, rr)
+			}
+			m.Rcode = dns.RcodeSuccess
+
+		} else {
+			fmt.Println("NS ERROR:", q.Name, d, err)
+			m.Rcode = dns.RcodeServerFailure
+		}
+	}
+}
+
+func sendSOA(m *dns.Msg, q dns.Question, d string, c *DNSBLRunningConfig) {
+	rr, err := dns.NewRR(soaResponse(d, c))
+
+	if err == nil {
+		if q.Name == d {
+			m.Answer = append(m.Answer, rr)
+		} else {
+			m.Ns = append(m.Ns, rr)
+		}
+		m.Rcode = dns.RcodeSuccess
+
+	} else {
+		fmt.Println("SOA ERROR:", q.Name, d, err)
+		m.Rcode = dns.RcodeServerFailure
+	}
+}
+
 func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) {
 	for _, q := range m.Question {
 		q.Name = strings.ToLower(q.Name)
@@ -94,10 +137,19 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 			var res string
 			cli := ""
 			query := ""
+
 			if c.Log {
 				cli = strings.Split(w.RemoteAddr().String(), ":")[0]
 			}
 
+			// send client to first nameserver if base-domain was queried (maybe the user wants to host a website on it?)
+			baseDomain := getBaseDomain(t, c)
+			if q.Name == baseDomain {
+				sendCNAMEofNS1(m, baseDomain, c)
+				return
+			}
+
+			// check if IP or Domain is listed
 			if t == LOOKUP_IP {
 				res, query = checkIP(q, c)
 			} else {
@@ -122,45 +174,15 @@ func parseQuery(m *dns.Msg, w dns.ResponseWriter, c *DNSBLRunningConfig, t int) 
 			}
 
 		case dns.TypeSOA:
-			baseDomain := getBaseDomain(t, c)
-			rr, err := dns.NewRR(soaResponse(baseDomain, c))
-
-			if err == nil {
-				if q.Name == baseDomain {
-					m.Answer = append(m.Answer, rr)
-				} else {
-					m.Ns = append(m.Ns, rr)
-				}
-				m.Rcode = dns.RcodeSuccess
-
-			} else {
-				fmt.Println("SOA ERROR:", q.Name, baseDomain, err)
-				m.Rcode = dns.RcodeServerFailure
-			}
+			sendSOA(m, q, getBaseDomain(t, c), c)
 
 		case dns.TypeNS:
-			baseDomain := getBaseDomain(t, c)
-
-			for _, host := range c.NS {
-				rr, err := dns.NewRR(fmt.Sprintf("%s 3600 IN NS %s", baseDomain, host))
-				if err == nil {
-					if q.Name == baseDomain {
-						m.Answer = append(m.Answer, rr)
-					} else {
-						m.Ns = append(m.Ns, rr)
-					}
-					m.Rcode = dns.RcodeSuccess
-
-				} else {
-					fmt.Println("NS ERROR:", q.Name, baseDomain, err)
-					m.Rcode = dns.RcodeServerFailure
-				}
-			}
+			sendNS(m, q, getBaseDomain(t, c), c)
 		}
 	}
 }
 
-func HandleDnsRequest(w dns.ResponseWriter, r *dns.Msg, c *DNSBLRunningConfig, l int) {
+func HandleDnsBLRequest(w dns.ResponseWriter, r *dns.Msg, c *DNSBLRunningConfig, l int) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 	m.Compress = false
@@ -168,6 +190,32 @@ func HandleDnsRequest(w dns.ResponseWriter, r *dns.Msg, c *DNSBLRunningConfig, l
 	switch r.Opcode {
 	case dns.OpcodeQuery:
 		parseQuery(m, w, c, l)
+	}
+
+	w.WriteMsg(m)
+}
+
+func HandleDNSRootDomain(w dns.ResponseWriter, r *dns.Msg, c *DNSBLRunningConfig) {
+	m := new(dns.Msg)
+	m.SetReply(r)
+	m.Compress = false
+
+	switch r.Opcode {
+	case dns.OpcodeQuery:
+		for _, q := range m.Question {
+			q.Name = strings.ToLower(q.Name)
+
+			switch q.Qtype {
+			case dns.TypeSOA:
+				sendSOA(m, q, c.Root, c)
+
+			case dns.TypeNS:
+				sendNS(m, q, c.Root, c)
+
+			default:
+				sendCNAMEofNS1(m, c.Root, c)
+			}
+		}
 	}
 
 	w.WriteMsg(m)
